@@ -1,3 +1,5 @@
+Autor: David Benjamin Fuentes Castro (Proyecto desarrollado de forma individual)
+
 Modo de uso: Explica que el código se compila simplemente ejecutando make en la terminal, lo que utiliza las flags estrictas de C17 exigidas (-Wall -Wextra -std=c17). Luego, indica que se ejecuta con ./planificador plan.txt K (donde K es el límite).
 
 Funciones implementadas: Menciona que usaste un arreglo de structs Actividad para modelar el DAG, fork() para la creación concurrente, pipes (fd_in, fd_out) para el paso de mensajes, y sigaction para la interrupción SIGINT.
