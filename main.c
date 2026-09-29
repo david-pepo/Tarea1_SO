@@ -7,6 +7,7 @@
 #include <unistd.h>    
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <signal.h>
 
 #define MAX_LINE 256
 #define MAX_DEPS 20
@@ -30,10 +31,36 @@ typedef struct {
 Actividad plan[MAX_ACTIVIDADES];
 int total_actividades = 0;
 
+void inspeccion_seremi(int sig) {
+    (void)sig; 
+    
+    printf("\n\n[!] ¡LLEGÓ LA SEREMI! (Señal SIGINT atrapada). Clausurando la ramada...\n");
+    
+    for (int i = 0; i < total_actividades; i++) {
+        if (plan[i].estado == 1 && plan[i].pid > 0) {
+            printf("[Seremi] Abortando actividad: %s (PID: %d)\n", plan[i].nombre, plan[i].pid);
+            kill(plan[i].pid, SIGKILL);
+        }
+    }
+    
+    printf("[Seremi] Todas las actividades fueron canceladas. Fin del simulador.\n");
+    exit(1);
+}
+
 int main(int argc, char *argv[]) {
 
     if (argc != 3) {
         fprintf(stderr, "Uso: %s <archivo_plan.txt> <K_concurrencia>\n", argv[0]);
+        return 1;
+    }
+
+    struct sigaction sa;
+    sa.sa_handler = inspeccion_seremi;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    
+    if (sigaction(SIGINT, &sa, NULL) == -1) {
+        perror("Error al registrar la señal SIGINT");
         return 1;
     }
 
@@ -136,8 +163,18 @@ int main(int argc, char *argv[]) {
 
                     pid_t pid = fork();
                     if (pid == 0) {
-                        close(plan[i].fd_in[1]);
+			if (pid == 0) {
+                      
+                        struct sigaction sa_dfl;
+                        sa_dfl.sa_handler = SIG_DFL;
+                        sigemptyset(&sa_dfl.sa_mask);
+                        sa_dfl.sa_flags = 0;
+                        sigaction(SIGINT, &sa_dfl, NULL);
+
+                        close(plan[i].fd_in[1]); 
                         close(plan[i].fd_out[0]);
+                        close(plan[i].fd_in[1]);
+                        close(plan[i].fd_out[0]);}
 
                         for (int j = 0; j < plan[i].num_dependencias; j++) {
                             char msg_recibido[100];
